@@ -2,13 +2,15 @@ package source
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 	"io"
+	"os"
 	"time"
 
 	"github.com/alphauslabs/blue-internal-go/budget/v1"
 	"github.com/alphauslabs/bluectl/pkg/logger"
 	"github.com/alphauslabs/budget/pkg/connection"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
 
@@ -55,6 +57,32 @@ If [yyyymm] is not set, it defaults to the current month.`,
 				return
 			}
 
+			render := true
+			table := tablewriter.NewWriter(os.Stdout)
+			table.SetBorder(false)
+			table.SetAutoWrapText(false)
+			table.SetHeaderLine(false)
+			table.SetColumnSeparator("")
+			table.SetTablePadding("  ")
+			table.SetNoWhiteSpace(true)
+			table.SetColumnAlignment([]int{
+				tablewriter.ALIGN_DEFAULT,
+				tablewriter.ALIGN_DEFAULT,
+				tablewriter.ALIGN_RIGHT,
+				tablewriter.ALIGN_RIGHT,
+				tablewriter.ALIGN_RIGHT,
+				tablewriter.ALIGN_RIGHT,
+			})
+
+			table.Append([]string{
+				"ACCT",
+				"DATE",
+				"TRUEUNBLENDED",
+				"UNBLENDED",
+				"TU_DIFF",
+				"U_DIFF",
+			})
+
 		loop:
 			for {
 				v, err := stream.Recv()
@@ -66,8 +94,34 @@ If [yyyymm] is not set, it defaults to the current month.`,
 					break loop
 				}
 
-				b, _ := json.Marshal(v)
-				logger.Info(string(b))
+				if v.Aws == nil {
+					continue
+				}
+
+				add := []string{
+					id,
+					v.Aws.Date,
+					fmt.Sprintf("%f", v.Aws.TrueUnblended),
+					fmt.Sprintf("%f", v.Aws.Unblended),
+				}
+
+				if v.Aws.TrueUnblendedDiff > 0.001 {
+					add = append(add, fmt.Sprintf("%f", v.Aws.TrueUnblendedDiff))
+				} else {
+					add = append(add, "-")
+				}
+
+				if v.Aws.UnblendedDiff > 0.001 {
+					add = append(add, fmt.Sprintf("%f", v.Aws.UnblendedDiff))
+				} else {
+					add = append(add, "-")
+				}
+
+				table.Append(add)
+			}
+
+			if render {
+				table.Render()
 			}
 		},
 	}
