@@ -1,4 +1,4 @@
-`budget` is the command line client for our internal budget service [(tucpd)](https://github.com/mobingilabs/ouchan/tree/master/cloudrun/budgetd).
+`budget` is the command line client for our internal budget service [(budgetd)](https://github.com/mobingilabs/ouchan/tree/master/cloudrun/budgetd).
 
 To install using [HomeBrew](https://brew.sh/), run the following command:
 
