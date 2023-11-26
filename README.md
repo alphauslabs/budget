@@ -1,3 +1,5 @@
+[![main](https://github.com/alphauslabs/budget/actions/workflows/main.yml/badge.svg)](https://github.com/alphauslabs/budget/actions/workflows/main.yml)
+
 `budget` is the command line client for our internal budget service [(budgetd)](https://github.com/mobingilabs/ouchan/tree/master/cloudrun/budgetd).
 
 To install using [HomeBrew](https://brew.sh/), run the following command:
