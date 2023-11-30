@@ -3,7 +3,7 @@ module github.com/alphauslabs/budget
 go 1.20
 
 require (
-	github.com/alphauslabs/blue-internal-go v0.15.1
+	github.com/alphauslabs/blue-internal-go v0.16.2
 	github.com/alphauslabs/bluectl v0.34.12
 	github.com/fatih/color v1.15.0
 	github.com/olekukonko/tablewriter v0.0.5

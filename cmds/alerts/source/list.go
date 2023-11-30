@@ -15,13 +15,18 @@ import (
 )
 
 func ListCmd() *cobra.Command {
+	var (
+		runDate string
+	)
+
 	cmd := &cobra.Command{
-		Use:   "list <id> [yyyymm]",
+		Use:   "list <id> [month]",
 		Short: "List the latest query source for alerts",
 		Long: `List the latest query source for alerts.
 
 The <id> is required and should be an account id.
-If [yyyymm] is not set, it defaults to the current month.`,
+If [month] is not set, it defaults to the current month.
+Format for [month] is 'yyyymm'.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := context.Background()
 			con, err := connection.New(ctx)
@@ -51,6 +56,10 @@ If [yyyymm] is not set, it defaults to the current month.`,
 				},
 			}
 
+			if runDate != "" {
+				req.AwsOptions.RunTime = runDate
+			}
+
 			stream, err := client.ListAlertSource(ctx, &req)
 			if err != nil {
 				logger.Errorf("ListAlertSource failed: %v", err)
@@ -68,8 +77,7 @@ If [yyyymm] is not set, it defaults to the current month.`,
 			table.SetColumnAlignment([]int{
 				tablewriter.ALIGN_DEFAULT,
 				tablewriter.ALIGN_DEFAULT,
-				tablewriter.ALIGN_RIGHT,
-				tablewriter.ALIGN_RIGHT,
+				tablewriter.ALIGN_DEFAULT,
 				tablewriter.ALIGN_RIGHT,
 				tablewriter.ALIGN_RIGHT,
 			})
@@ -77,11 +85,12 @@ If [yyyymm] is not set, it defaults to the current month.`,
 			table.Append([]string{
 				"ACCT",
 				"DATE",
+				"RUNTIME",
 				"TRUEUNBLENDED",
 				"UNBLENDED",
-				"TU_DIFF",
-				"U_DIFF",
 			})
+
+			var tt, tu float64
 
 		loop:
 			for {
@@ -101,24 +110,23 @@ If [yyyymm] is not set, it defaults to the current month.`,
 				add := []string{
 					id,
 					v.Aws.Date,
+					v.Aws.RunTime,
 					fmt.Sprintf("%f", v.Aws.TrueUnblended),
 					fmt.Sprintf("%f", v.Aws.Unblended),
 				}
 
-				if v.Aws.TrueUnblendedDiff > 0.001 {
-					add = append(add, fmt.Sprintf("%f", v.Aws.TrueUnblendedDiff))
-				} else {
-					add = append(add, "-")
-				}
-
-				if v.Aws.UnblendedDiff > 0.001 {
-					add = append(add, fmt.Sprintf("%f", v.Aws.UnblendedDiff))
-				} else {
-					add = append(add, "-")
-				}
-
+				tt += v.Aws.TrueUnblended
+				tu += v.Aws.Unblended
 				table.Append(add)
 			}
+
+			table.Append([]string{
+				"",
+				"",
+				"",
+				fmt.Sprintf("%f", tt),
+				fmt.Sprintf("%f", tu),
+			})
 
 			if render {
 				table.Render()
@@ -127,5 +135,6 @@ If [yyyymm] is not set, it defaults to the current month.`,
 	}
 
 	cmd.Flags().SortFlags = false
+	cmd.Flags().StringVar(&runDate, "rundate", runDate, "run date to query, format: yyyymmdd")
 	return cmd
 }
